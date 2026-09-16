@@ -1,0 +1,176 @@
+---
+export const prerender = false;
+
+import { getTerm, getEmDashCollection, getTermsForEntries, decodeSlug } from "emdash";
+import Base from "../../../layouts/Base.astro";
+
+const slug = decodeSlug(Astro.params.slug);
+const term = slug ? await getTerm("section", slug, { includeCounts: false }) : null;
+
+if (!term) {
+	return Astro.redirect("/404");
+}
+
+const { entries: posts, cacheHint } = await getEmDashCollection("blog", {
+	where: { section: term.slug },
+	orderBy: { published_at: "desc" },
+});
+
+if (Astro.cache?.enabled) Astro.cache.set(cacheHint);
+
+const tagsByEntry = await getTermsForEntries(
+	"blog",
+	posts.map((p) => p.data.id),
+	"post_tag",
+);
+
+const formatDate = (date: Date) =>
+	date.toLocaleDateString("es-ES", { year: "numeric", month: "long", day: "numeric" });
+---
+
+<Base title={term.label} description={`Publicaciones de la sección ${term.label}.`}>
+	<section class="section-header">
+		<span class="section-label">Sección</span>
+		<h1>{term.label}</h1>
+	</section>
+
+	{
+		posts.length === 0 ? (
+			<p class="empty">Aún no hay publicaciones en esta sección.</p>
+		) : (
+			<div class="posts-list">
+				{posts.map((post) => (
+					<article class="post-item">
+						<a href={`/blog/${post.id}`} class="post-link">
+							{post.data.publishedAt && (
+								<time class="post-date">{formatDate(post.data.publishedAt)}</time>
+							)}
+							<h2 class="post-title">{post.data.title}</h2>
+							{post.data.excerpt && <p class="post-excerpt">{post.data.excerpt}</p>}
+						</a>
+						{
+							(tagsByEntry.get(post.data.id) ?? []).length > 0 && (
+								<div class="post-tags">
+									{(tagsByEntry.get(post.data.id) ?? []).map((t) => (
+										<span class="post-tag">{t.label}</span>
+									))}
+								</div>
+							)
+						}
+					</article>
+				))}
+			</div>
+		)
+	}
+
+	<a href="/blog" class="back-link">← Ver todo el blog</a>
+</Base>
+
+<style>
+	.section-header {
+		max-width: var(--wide-width);
+		margin: 0 auto;
+		padding: var(--spacing-3xl) var(--spacing-lg) var(--spacing-2xl);
+	}
+
+	.section-label {
+		display: block;
+		font-size: var(--font-size-xs);
+		text-transform: uppercase;
+		letter-spacing: var(--tracking-wide);
+		color: var(--color-brand);
+		font-weight: 600;
+		margin-bottom: var(--spacing-sm);
+	}
+
+	.section-header h1 {
+		font-family: var(--font-heading);
+		font-size: var(--font-size-3xl);
+		font-weight: var(--font-weight-display);
+	}
+
+	.empty {
+		max-width: var(--wide-width);
+		margin: 0 auto;
+		padding: 0 var(--spacing-lg) var(--spacing-4xl);
+		color: var(--color-muted);
+	}
+
+	.posts-list {
+		max-width: var(--max-width);
+		margin: 0 auto;
+		padding: 0 var(--spacing-lg) var(--spacing-2xl);
+		display: flex;
+		flex-direction: column;
+	}
+
+	.post-item {
+		padding: var(--spacing-xl) 0;
+		border-bottom: 1px solid var(--color-border);
+	}
+
+	.post-item:first-child {
+		padding-top: 0;
+	}
+
+	.post-link {
+		display: block;
+		text-decoration: none;
+		color: inherit;
+	}
+
+	.post-date {
+		display: block;
+		font-size: var(--font-size-sm);
+		color: var(--color-muted);
+		margin-bottom: var(--spacing-sm);
+	}
+
+	.post-title {
+		font-family: var(--font-heading);
+		font-size: var(--font-size-2xl);
+		font-weight: var(--font-weight-heading);
+		line-height: var(--leading-snug);
+		transition: color var(--transition-fast);
+	}
+
+	.post-link:hover .post-title {
+		color: var(--color-brand);
+	}
+
+	.post-excerpt {
+		margin-top: var(--spacing-sm);
+		color: var(--color-muted);
+		line-height: var(--leading-normal);
+	}
+
+	.post-tags {
+		display: flex;
+		flex-wrap: wrap;
+		gap: var(--spacing-sm);
+		margin-top: var(--spacing-md);
+	}
+
+	.post-tag {
+		font-size: var(--font-size-xs);
+		color: var(--color-muted);
+		padding: 2px var(--spacing-sm);
+		border: 1px solid var(--color-border);
+		border-radius: var(--radius);
+	}
+
+	.back-link {
+		display: block;
+		max-width: var(--max-width);
+		margin: 0 auto var(--spacing-4xl);
+		padding: 0 var(--spacing-lg);
+		font-size: var(--font-size-sm);
+		color: var(--color-muted);
+		text-decoration: none;
+		transition: color var(--transition-fast);
+	}
+
+	.back-link:hover {
+		color: var(--color-text);
+	}
+</style>
