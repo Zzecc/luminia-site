@@ -41,13 +41,6 @@ const formatDate = (date: Date) =>
 	<section class="hero">
 		<h1 class="hero-title">{settings?.title || "Sitio"}</h1>
 		<p class="hero-tagline">{settings?.tagline || ""}</p>
-		<nav class="section-filters" aria-label="Secciones">
-			{SECTIONS.map((s) => (
-				<a href={s.href} class="section-chip">
-					{s.label}
-				</a>
-			))}
-		</nav>
 	</section>
 
 	{
@@ -128,32 +121,6 @@ const formatDate = (date: Date) =>
 		color: var(--color-muted);
 		font-family: var(--font-heading);
 		font-style: italic;
-	}
-
-	.section-filters {
-		display: flex;
-		flex-wrap: wrap;
-		justify-content: center;
-		gap: var(--spacing-sm);
-		margin-top: var(--spacing-xl);
-	}
-
-	.section-chip {
-		display: inline-block;
-		padding: var(--spacing-xs) var(--spacing-md);
-		font-size: var(--font-size-sm);
-		color: var(--color-muted);
-		text-decoration: none;
-		border: 1px solid var(--color-border);
-		border-radius: var(--radius);
-		transition:
-			color var(--transition-fast),
-			border-color var(--transition-fast);
-	}
-
-	.section-chip:hover {
-		color: var(--color-text);
-		border-color: var(--color-text);
 	}
 
 	.hero-post {

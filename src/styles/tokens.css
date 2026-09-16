@@ -26,8 +26,8 @@
 		--color-muted: light-dark(#82796d, #9c948a);
 		--color-border: light-dark(#dad4c6, #322e27);
 		--color-surface: light-dark(#ffffff, #1c1a16);
-		--color-brand: light-dark(#4338ca, #a5b4fc); /* the single accent, used sparingly */
-		--color-brand-hover: light-dark(#312a9e, #c7d2fe);
+		--color-brand: light-dark(#1e40cd, #93a9f5); /* the single accent, used sparingly */
+		--color-brand-hover: light-dark(#16309e, #b6c5fa);
 		--color-on-brand: white; /* text on brand-colored surfaces */
 		--color-brand-ring: color-mix(in srgb, var(--color-brand) 10%, transparent);
 		--color-danger: light-dark(#dc2626, #f87171);
@@ -91,8 +91,8 @@
 			--color-muted: #82796d;
 			--color-border: #dad4c6;
 			--color-surface: #ffffff;
-			--color-brand: #4338ca;
-			--color-brand-hover: #312a9e;
+			--color-brand: #1e40cd;
+			--color-brand-hover: #16309e;
 			--color-danger: #dc2626;
 		}
 	}
