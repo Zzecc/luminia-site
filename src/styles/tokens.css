@@ -10,10 +10,9 @@
   both modes at once; use light-dark(<light>, <dark>) in an override to
   keep them distinct.
 
-  --font-heading (the serif display face) is defined by the font
-  pipeline in astro.config.mjs, not here. To swap it, edit the fonts
-  entry there. --font-body is the deliberately quiet system sans stack
-  below.
+  --font-heading and --font-body are both defined by the font pipeline
+  in astro.config.mjs (Open Sans for both), not here. To swap either,
+  edit the fonts entry there.
 */
 
 @layer base {
@@ -32,8 +31,7 @@
 		--color-danger: light-dark(#dc2626, #f87171);
 
 		/* Typography */
-		--font-body: system-ui, -apple-system, sans-serif;
-		--font-weight-heading: 500; /* serif headings and titles */
+		--font-weight-heading: 500; /* headings and titles */
 		--font-weight-display: 500; /* hero and page titles */
 
 		/* Type scale */
