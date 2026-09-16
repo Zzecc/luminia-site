@@ -1,56 +1,82 @@
 ---
-import { getEmDashCollection, getSiteSettings } from "emdash";
+import { getEmDashCollection, getSiteSettings, getTaxonomyTerms, getTermsForEntries } from "emdash";
 import Base from "../layouts/Base.astro";
-import ProjectCard from "../components/ProjectCard.astro";
 
-// Fetch settings + the 4 featured projects in parallel. Limiting and
-// sorting in the database avoids loading every project just to slice
-// off the first 4 in JS (a full-table read on sites with lots of work).
-const [settings, { entries: featuredProjects, cacheHint }] = await Promise.all([
+// Fetch settings + the latest posts + section list in parallel. Limiting
+// and sorting in the database avoids loading every post just to slice
+// off the first few in JS.
+const [settings, { entries: latestPosts, cacheHint }, sections] = await Promise.all([
 	getSiteSettings(),
-	getEmDashCollection("projects", {
+	getEmDashCollection("blog", {
 		orderBy: { published_at: "desc" },
-		limit: 4,
+		limit: 6,
 	}),
+	getTaxonomyTerms("section", { includeCounts: false }),
 ]);
 
 if (Astro.cache?.enabled) Astro.cache.set(cacheHint);
+
+const sectionsByEntry = await getTermsForEntries(
+	"blog",
+	latestPosts.map((p) => p.data.id),
+	"section",
+);
+
+const formatDate = (date: Date) =>
+	date.toLocaleDateString("es-ES", { year: "numeric", month: "long", day: "numeric" });
 ---
 
 <Base>
 	<section class="hero">
 		<h1 class="hero-title">{settings?.title || "Estudio"}</h1>
 		<p class="hero-tagline">{settings?.tagline || "Diseño y desarrollo"}</p>
+		{
+			sections.length > 0 && (
+				<nav class="section-filters" aria-label="Secciones">
+					{sections.map((s) => (
+						<a href={`/blog/section/${s.slug}`} class="section-chip">
+							{s.label}
+						</a>
+					))}
+				</nav>
+			)
+		}
 	</section>
 
 	{
-		featuredProjects.length > 0 ? (
+		latestPosts.length > 0 ? (
 			<section class="featured">
 				<header class="section-header">
-					<h2 class="section-title">Trabajo seleccionado</h2>
-					<a href="/work" class="section-link">
-						Ver todos los proyectos &rarr;
+					<h2 class="section-title">Últimas publicaciones</h2>
+					<a href="/blog" class="section-link">
+						Ver todo el blog &rarr;
 					</a>
 				</header>
-				<div class="projects-grid">
-					{featuredProjects.map((project) => (
-						<ProjectCard
-							title={project.data.title ?? "Sin título"}
-							summary={project.data.summary}
-							featuredImage={project.data.featured_image ?? ""}
-							href={`/work/${project.id}`}
-							client={project.data.client}
-							year={project.data.year}
-						/>
+				<div class="posts-list">
+					{latestPosts.map((post) => (
+						<article class="post-item">
+							<a href={`/blog/${post.id}`} class="post-link">
+								<div class="post-meta">
+									{(sectionsByEntry.get(post.data.id) ?? []).map((s) => (
+										<span class="section-badge">{s.label}</span>
+									))}
+									{post.data.publishedAt && (
+										<time class="post-date">{formatDate(post.data.publishedAt)}</time>
+									)}
+								</div>
+								<h3 class="post-title">{post.data.title}</h3>
+								{post.data.excerpt && <p class="post-excerpt">{post.data.excerpt}</p>}
+							</a>
+						</article>
 					))}
 				</div>
 			</section>
 		) : (
 			<section class="empty-state">
-				<h2>Aún no hay proyectos</h2>
-				<p>Agrega tu primer proyecto en el panel de administración.</p>
-				<a href="/_emdash/admin/content/projects/new" class="btn">
-					Agregar proyecto
+				<h2>Aún no hay publicaciones</h2>
+				<p>Agrega tu primera publicación en el panel de administración.</p>
+				<a href="/_emdash/admin/content/blog/new" class="btn">
+					Agregar publicación
 				</a>
 			</section>
 		)
@@ -61,7 +87,7 @@ if (Astro.cache?.enabled) Astro.cache.set(cacheHint);
 	.hero {
 		max-width: var(--wide-width);
 		margin: 0 auto;
-		padding: var(--spacing-4xl) var(--spacing-lg);
+		padding: var(--spacing-4xl) var(--spacing-lg) var(--spacing-2xl);
 		text-align: center;
 	}
 
@@ -79,8 +105,34 @@ if (Astro.cache?.enabled) Astro.cache.set(cacheHint);
 		font-style: italic;
 	}
 
+	.section-filters {
+		display: flex;
+		flex-wrap: wrap;
+		justify-content: center;
+		gap: var(--spacing-sm);
+		margin-top: var(--spacing-xl);
+	}
+
+	.section-chip {
+		display: inline-block;
+		padding: var(--spacing-xs) var(--spacing-md);
+		font-size: var(--font-size-sm);
+		color: var(--color-muted);
+		text-decoration: none;
+		border: 1px solid var(--color-border);
+		border-radius: var(--radius);
+		transition:
+			color var(--transition-fast),
+			border-color var(--transition-fast);
+	}
+
+	.section-chip:hover {
+		color: var(--color-text);
+		border-color: var(--color-text);
+	}
+
 	.featured {
-		max-width: var(--wide-width);
+		max-width: var(--max-width);
 		margin: 0 auto;
 		padding: 0 var(--spacing-lg) var(--spacing-4xl);
 	}
@@ -110,10 +162,67 @@ if (Astro.cache?.enabled) Astro.cache.set(cacheHint);
 		color: var(--color-text);
 	}
 
-	.projects-grid {
-		display: grid;
-		grid-template-columns: repeat(2, 1fr);
-		gap: var(--spacing-2xl);
+	.posts-list {
+		display: flex;
+		flex-direction: column;
+	}
+
+	.post-item {
+		padding: var(--spacing-xl) 0;
+		border-bottom: 1px solid var(--color-border);
+	}
+
+	.post-item:first-child {
+		padding-top: 0;
+	}
+
+	.post-item:last-child {
+		border-bottom: none;
+	}
+
+	.post-link {
+		display: block;
+		text-decoration: none;
+		color: inherit;
+	}
+
+	.post-meta {
+		display: flex;
+		align-items: center;
+		flex-wrap: wrap;
+		gap: var(--spacing-md);
+		margin-bottom: var(--spacing-sm);
+	}
+
+	.section-badge {
+		font-size: var(--font-size-xs);
+		text-transform: uppercase;
+		letter-spacing: var(--tracking-wide);
+		color: var(--color-brand);
+		font-weight: 600;
+	}
+
+	.post-date {
+		font-size: var(--font-size-sm);
+		color: var(--color-muted);
+	}
+
+	.post-title {
+		font-family: var(--font-heading);
+		font-size: var(--font-size-2xl);
+		font-weight: var(--font-weight-heading);
+		line-height: var(--leading-snug);
+		transition: color var(--transition-fast);
+	}
+
+	.post-link:hover .post-title {
+		color: var(--color-brand);
+	}
+
+	.post-excerpt {
+		margin-top: var(--spacing-sm);
+		color: var(--color-muted);
+		line-height: var(--leading-normal);
 	}
 
 	.empty-state {
@@ -150,15 +259,11 @@ if (Astro.cache?.enabled) Astro.cache.set(cacheHint);
 
 	@media (max-width: 768px) {
 		.hero {
-			padding: var(--spacing-3xl) var(--spacing-lg);
+			padding: var(--spacing-3xl) var(--spacing-lg) var(--spacing-xl);
 		}
 
 		.hero-title {
 			font-size: var(--font-size-3xl);
-		}
-
-		.projects-grid {
-			grid-template-columns: 1fr;
 		}
 
 		.section-header {
