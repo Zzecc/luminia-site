@@ -10,29 +10,33 @@
   both modes at once; use light-dark(<light>, <dark>) in an override to
   keep them distinct.
 
-  --font-heading and --font-body are both defined by the font pipeline
-  in astro.config.mjs (Open Sans for both), not here. To swap either,
-  edit the fonts entry there.
+  --font-heading and --font-body are loaded via Fontshare in
+  Base.astro's <head> (Clash Display / General Sans), not through the
+  Astro Fonts API -- Fontshare isn't a Google Fonts provider. To swap
+  either, edit the <link> there and the family names below.
 */
 
 @layer base {
 	:root {
 		color-scheme: light dark;
 
-		/* Colors */
-		--color-bg: light-dark(#fafafa, #0a0a0a);
-		--color-text: light-dark(#1a1a1a, #f5f5f5);
-		--color-muted: light-dark(#6b7280, #a1a1aa);
-		--color-border: light-dark(#e5e7eb, #27272a);
-		--color-surface: light-dark(#ffffff, #18181b);
-		--color-brand: light-dark(#7c3aed, #a78bfa); /* the single accent, used sparingly */
+		/* Colors -- warm neutral base, one indigo accent, dashed hairlines */
+		--color-bg: light-dark(#f7f5ef, #131210);
+		--color-text: light-dark(#211f1a, #f3f1e9);
+		--color-muted: light-dark(#82796d, #9c948a);
+		--color-border: light-dark(#dad4c6, #322e27);
+		--color-surface: light-dark(#ffffff, #1c1a16);
+		--color-brand: light-dark(#4338ca, #a5b4fc); /* the single accent, used sparingly */
+		--color-brand-hover: light-dark(#312a9e, #c7d2fe);
 		--color-on-brand: white; /* text on brand-colored surfaces */
 		--color-brand-ring: color-mix(in srgb, var(--color-brand) 10%, transparent);
 		--color-danger: light-dark(#dc2626, #f87171);
 
 		/* Typography */
-		--font-weight-heading: 500; /* headings and titles */
-		--font-weight-display: 500; /* hero and page titles */
+		--font-heading: "Clash Display", var(--font-body);
+		--font-body: "General Sans", system-ui, -apple-system, sans-serif;
+		--font-weight-heading: 600; /* headings and titles */
+		--font-weight-display: 600; /* hero and page titles */
 
 		/* Type scale */
 		--font-size-xs: 0.75rem;
@@ -51,8 +55,8 @@
 		--leading-relaxed: 1.7; /* long-form content */
 
 		/* Letter spacing */
-		--tracking-tight: -0.02em; /* site title, hero title */
-		--tracking-wide: 0.05em; /* uppercase meta lines, tag chips */
+		--tracking-tight: -0.01em; /* site title, hero title */
+		--tracking-wide: 0.06em; /* uppercase meta lines, tag chips, nav */
 
 		/* Spacing */
 		--spacing-xs: 0.25rem;
@@ -82,12 +86,13 @@
 	@supports not (color: light-dark(#000, #fff)) {
 		:root {
 			color-scheme: light;
-			--color-bg: #fafafa;
-			--color-text: #1a1a1a;
-			--color-muted: #6b7280;
-			--color-border: #e5e7eb;
+			--color-bg: #f7f5ef;
+			--color-text: #211f1a;
+			--color-muted: #82796d;
+			--color-border: #dad4c6;
 			--color-surface: #ffffff;
-			--color-brand: #7c3aed;
+			--color-brand: #4338ca;
+			--color-brand-hover: #312a9e;
 			--color-danger: #dc2626;
 		}
 	}
