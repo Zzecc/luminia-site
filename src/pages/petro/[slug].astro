@@ -1,0 +1,187 @@
+---
+import { getEmDashEntry, decodeSlug } from "emdash";
+import { PortableText } from "emdash/ui";
+import Base from "../../layouts/Base.astro";
+
+const COLLECTION = "petro";
+const BACK_HREF = "/petro";
+const BACK_LABEL = "Petro";
+
+const slug = decodeSlug(Astro.params.slug);
+
+if (!slug) {
+	return Astro.redirect("/404");
+}
+
+const { entry: post, cacheHint } = await getEmDashEntry(COLLECTION, slug);
+
+if (!post) {
+	return Astro.redirect("/404");
+}
+
+if (Astro.cache?.enabled) Astro.cache.set(cacheHint);
+
+const publishDate =
+	post.data.publishedAt?.toLocaleDateString("es-ES", {
+		year: "numeric",
+		month: "long",
+		day: "numeric",
+	}) ?? null;
+
+const tags = post.data.terms?.post_tag ?? [];
+---
+
+<Base title={post.data.title} description={post.data.excerpt}>
+	<article class="post">
+		<header class="post-header">
+			<div class="post-meta">
+				<span class="type-badge">{BACK_LABEL}</span>
+				{publishDate && <time class="post-date">{publishDate}</time>}
+			</div>
+			<h1 class="post-title" {...post.edit.title}>{post.data.title}</h1>
+			{
+				post.data.excerpt && (
+					<p class="post-excerpt" {...post.edit.excerpt}>
+						{post.data.excerpt}
+					</p>
+				)
+			}
+		</header>
+
+		<div class="post-content">
+			<PortableText value={post.data.content} />
+		</div>
+
+		{
+			tags.length > 0 && (
+				<div class="post-tags">
+					{tags.map((t) => (
+						<span class="post-tag">{t.label}</span>
+					))}
+				</div>
+			)
+		}
+
+		<footer class="post-footer">
+			<a href={BACK_HREF} class="back-link">← Volver a {BACK_LABEL}</a>
+		</footer>
+	</article>
+</Base>
+
+<style>
+	.post {
+		max-width: var(--max-width);
+		margin: 0 auto;
+		padding: var(--spacing-3xl) var(--spacing-lg) var(--spacing-4xl);
+	}
+
+	.post-header {
+		margin-bottom: var(--spacing-2xl);
+	}
+
+	.post-meta {
+		display: flex;
+		align-items: center;
+		flex-wrap: wrap;
+		gap: var(--spacing-md);
+		margin-bottom: var(--spacing-md);
+	}
+
+	.type-badge {
+		font-size: var(--font-size-xs);
+		text-transform: uppercase;
+		letter-spacing: var(--tracking-wide);
+		color: var(--color-brand);
+		font-weight: 600;
+	}
+
+	.post-date {
+		font-size: var(--font-size-sm);
+		color: var(--color-muted);
+	}
+
+	.post-title {
+		font-family: var(--font-heading);
+		font-size: var(--font-size-4xl);
+		font-weight: var(--font-weight-display);
+		line-height: var(--leading-tight);
+		margin-bottom: var(--spacing-md);
+	}
+
+	.post-excerpt {
+		font-size: var(--font-size-lg);
+		color: var(--color-muted);
+		line-height: var(--leading-normal);
+	}
+
+	.post-content {
+		font-size: var(--font-size-base);
+		line-height: var(--leading-relaxed);
+	}
+
+	.post-content :global(p) {
+		margin-bottom: 1.5em;
+	}
+
+	.post-content :global(h4) {
+		font-family: var(--font-heading);
+		font-weight: var(--font-weight-heading);
+		font-size: var(--font-size-lg);
+		color: var(--color-brand);
+		margin-top: 2em;
+		margin-bottom: 0.25em;
+	}
+
+	.post-content :global(blockquote) {
+		margin: 0 0 1.5em;
+		padding-left: var(--spacing-xl);
+		border-left: 2px solid var(--color-brand);
+		color: var(--color-text);
+		font-family: var(--font-heading);
+		font-style: italic;
+		font-size: var(--font-size-lg);
+		line-height: var(--leading-normal);
+	}
+
+	.post-content :global(a) {
+		color: var(--color-brand);
+	}
+
+	.post-tags {
+		display: flex;
+		flex-wrap: wrap;
+		gap: var(--spacing-sm);
+		margin-top: var(--spacing-2xl);
+	}
+
+	.post-tag {
+		font-size: var(--font-size-xs);
+		color: var(--color-muted);
+		padding: 2px var(--spacing-sm);
+		border: 1px solid var(--color-border);
+		border-radius: var(--radius);
+	}
+
+	.post-footer {
+		margin-top: var(--spacing-3xl);
+		padding-top: var(--spacing-lg);
+		border-top: 1px solid var(--color-border);
+	}
+
+	.back-link {
+		font-size: var(--font-size-sm);
+		color: var(--color-muted);
+		text-decoration: none;
+		transition: color var(--transition-fast);
+	}
+
+	.back-link:hover {
+		color: var(--color-text);
+	}
+
+	@media (max-width: 768px) {
+		.post-title {
+			font-size: var(--font-size-3xl);
+		}
+	}
+</style>

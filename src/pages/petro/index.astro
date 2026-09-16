@@ -1,0 +1,72 @@
+---
+export const prerender = false;
+
+import { getEmDashCollection, getTermsForEntries } from "emdash";
+import Base from "../../layouts/Base.astro";
+import PostCard from "../../components/PostCard.astro";
+
+const { entries: posts, cacheHint } = await getEmDashCollection("petro", {
+	orderBy: { published_at: "desc" },
+});
+
+if (Astro.cache?.enabled) Astro.cache.set(cacheHint);
+
+const tagsByEntry = await getTermsForEntries(
+	"petro",
+	posts.map((p) => p.data.id),
+	"post_tag",
+);
+---
+
+<Base title="Petro" description="Notas y artículos sobre Gustavo Petro.">
+	<section class="section-header">
+		<h1>Petro</h1>
+	</section>
+
+	{
+		posts.length === 0 ? (
+			<p class="empty">Aún no hay publicaciones.</p>
+		) : (
+			<div class="posts-list">
+				{posts.map((post) => (
+					<PostCard
+						title={post.data.title}
+						excerpt={post.data.excerpt}
+						href={`/petro/${post.id}`}
+						date={post.data.publishedAt ?? undefined}
+						tags={(tagsByEntry.get(post.data.id) ?? []).map((t) => t.label)}
+					/>
+				))}
+			</div>
+		)
+	}
+</Base>
+
+<style>
+	.section-header {
+		max-width: var(--wide-width);
+		margin: 0 auto;
+		padding: var(--spacing-3xl) var(--spacing-lg) var(--spacing-2xl);
+	}
+
+	.section-header h1 {
+		font-family: var(--font-heading);
+		font-size: var(--font-size-3xl);
+		font-weight: var(--font-weight-display);
+	}
+
+	.empty {
+		max-width: var(--wide-width);
+		margin: 0 auto;
+		padding: 0 var(--spacing-lg) var(--spacing-4xl);
+		color: var(--color-muted);
+	}
+
+	.posts-list {
+		max-width: var(--max-width);
+		margin: 0 auto;
+		padding: 0 var(--spacing-lg) var(--spacing-4xl);
+		display: flex;
+		flex-direction: column;
+	}
+</style>

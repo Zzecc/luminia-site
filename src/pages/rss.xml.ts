@@ -4,32 +4,43 @@ import { getEmDashCollection, getSiteSettings } from "emdash";
 export const GET: APIRoute = async ({ site, url }) => {
 	const siteUrl = site?.toString() || url.origin;
 	const settings = await getSiteSettings();
-	const siteTitle = settings?.title || "Estudio";
-	const siteDescription = settings?.tagline || "Diseño y desarrollo";
+	const siteTitle = settings?.title || "Sitio";
+	const siteDescription = settings?.tagline || "";
 
-	const { entries: projects } = await getEmDashCollection("projects", {
-		orderBy: { published_at: "desc" },
-		limit: 20,
-	});
+	const SECTIONS = [
+		{ collection: "petro", href: "/petro" },
+		{ collection: "corrupcion", href: "/corrupcion" },
+		{ collection: "izquierda", href: "/izquierda" },
+	] as const;
 
-	const items = projects
-		.map((project) => {
-			if (!project.data.publishedAt) return null;
-			const pubDate = project.data.publishedAt.toUTCString();
+	const perSection = await Promise.all(
+		SECTIONS.map((s) =>
+			getEmDashCollection(s.collection, { orderBy: { published_at: "desc" }, limit: 20 }),
+		),
+	);
 
-			const projectUrl = `${siteUrl}/work/${project.id}`;
-			const title = escapeXml(project.data.title || "Sin título");
-			const description = escapeXml(project.data.summary || "");
+	const allPosts = perSection
+		.flatMap((result, i) => result.entries.map((post) => ({ post, href: SECTIONS[i].href })))
+		.filter(({ post }) => post.data.publishedAt)
+		.sort((a, b) => b.post.data.publishedAt!.getTime() - a.post.data.publishedAt!.getTime())
+		.slice(0, 20);
+
+	const items = allPosts
+		.map(({ post, href }) => {
+			const pubDate = post.data.publishedAt!.toUTCString();
+
+			const postUrl = `${siteUrl}${href}/${post.id}`;
+			const title = escapeXml(post.data.title || "Sin título");
+			const description = escapeXml(post.data.excerpt || "");
 
 			return `    <item>
       <title>${title}</title>
-      <link>${projectUrl}</link>
-      <guid isPermaLink="true">${projectUrl}</guid>
+      <link>${postUrl}</link>
+      <guid isPermaLink="true">${postUrl}</guid>
       <pubDate>${pubDate}</pubDate>
       <description>${description}</description>
     </item>`;
 		})
-		.filter(Boolean)
 		.join("\n");
 
 	const rss = `<?xml version="1.0" encoding="UTF-8"?>
