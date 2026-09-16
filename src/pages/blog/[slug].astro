@@ -1,0 +1,139 @@
+---
+import { getEmDashEntry, decodeSlug } from "emdash";
+import { PortableText } from "emdash/ui";
+import Base from "../../layouts/Base.astro";
+
+const slug = decodeSlug(Astro.params.slug);
+
+if (!slug) {
+	return Astro.redirect("/404");
+}
+
+const { entry: post, cacheHint } = await getEmDashEntry("blog", slug);
+
+if (!post) {
+	return Astro.redirect("/404");
+}
+
+if (Astro.cache?.enabled) Astro.cache.set(cacheHint);
+
+const publishDate =
+	post.data.publishedAt?.toLocaleDateString("es-ES", {
+		year: "numeric",
+		month: "long",
+		day: "numeric",
+	}) ?? null;
+---
+
+<Base title={post.data.title} description={post.data.excerpt}>
+	<article class="post">
+		<header class="post-header">
+			{publishDate && <time class="post-date">{publishDate}</time>}
+			<h1 class="post-title" {...post.edit.title}>{post.data.title}</h1>
+			{
+				post.data.excerpt && (
+					<p class="post-excerpt" {...post.edit.excerpt}>
+						{post.data.excerpt}
+					</p>
+				)
+			}
+		</header>
+
+		<div class="post-content">
+			<PortableText value={post.data.content} />
+		</div>
+
+		<footer class="post-footer">
+			<a href="/blog" class="back-link">← Volver al blog</a>
+		</footer>
+	</article>
+</Base>
+
+<style>
+	.post {
+		max-width: var(--max-width);
+		margin: 0 auto;
+		padding: var(--spacing-3xl) var(--spacing-lg) var(--spacing-4xl);
+	}
+
+	.post-header {
+		margin-bottom: var(--spacing-2xl);
+	}
+
+	.post-date {
+		display: block;
+		font-size: var(--font-size-sm);
+		color: var(--color-muted);
+		margin-bottom: var(--spacing-md);
+	}
+
+	.post-title {
+		font-family: var(--font-heading);
+		font-size: var(--font-size-4xl);
+		font-weight: var(--font-weight-display);
+		line-height: var(--leading-tight);
+		margin-bottom: var(--spacing-md);
+	}
+
+	.post-excerpt {
+		font-size: var(--font-size-lg);
+		color: var(--color-muted);
+		line-height: var(--leading-normal);
+	}
+
+	.post-content {
+		font-size: var(--font-size-base);
+		line-height: var(--leading-relaxed);
+	}
+
+	.post-content :global(p) {
+		margin-bottom: 1.5em;
+	}
+
+	.post-content :global(h4) {
+		font-family: var(--font-heading);
+		font-weight: var(--font-weight-heading);
+		font-size: var(--font-size-lg);
+		color: var(--color-brand);
+		margin-top: 2em;
+		margin-bottom: 0.25em;
+	}
+
+	.post-content :global(blockquote) {
+		margin: 0 0 1.5em;
+		padding-left: var(--spacing-xl);
+		border-left: 2px solid var(--color-brand);
+		color: var(--color-text);
+		font-family: var(--font-heading);
+		font-style: italic;
+		font-size: var(--font-size-lg);
+		line-height: var(--leading-normal);
+	}
+
+	.post-content :global(a) {
+		color: var(--color-brand);
+	}
+
+	.post-footer {
+		margin-top: var(--spacing-3xl);
+		padding-top: var(--spacing-lg);
+		border-top: 1px solid var(--color-border);
+	}
+
+	.back-link {
+		font-size: var(--font-size-sm);
+		color: var(--color-muted);
+		text-decoration: none;
+		transition: color var(--transition-fast);
+	}
+
+	.back-link:hover {
+		color: var(--color-text);
+	}
+
+	@media (max-width: 768px) {
+		.post-title {
+			font-size: var(--font-size-3xl);
+		}
+	}
+</style>
