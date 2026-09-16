@@ -32,6 +32,7 @@ const tagsByEntry = await getTermsForEntries(
 					<PostCard
 						title={post.data.title}
 						excerpt={post.data.excerpt}
+						featuredImage={post.data.featured_image ?? undefined}
 						href={`/corrupcion/${post.id}`}
 						date={post.data.publishedAt ?? undefined}
 						tags={(tagsByEntry.get(post.data.id) ?? []).map((t) => t.label)}

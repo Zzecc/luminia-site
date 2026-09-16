@@ -1,5 +1,6 @@
 ---
 import { getEmDashCollection, getSiteSettings } from "emdash";
+import { Image } from "emdash/ui";
 import Base from "../layouts/Base.astro";
 import PostCard from "../components/PostCard.astro";
 
@@ -28,7 +29,12 @@ const latestPosts = perSection
 	)
 	.filter(({ post }) => post.data.publishedAt)
 	.sort((a, b) => b.post.data.publishedAt!.getTime() - a.post.data.publishedAt!.getTime())
-	.slice(0, 6);
+	.slice(0, 7);
+
+const [featuredPost, ...restPosts] = latestPosts;
+
+const formatDate = (date: Date) =>
+	date.toLocaleDateString("es-ES", { year: "numeric", month: "long", day: "numeric" });
 ---
 
 <Base>
@@ -45,16 +51,43 @@ const latestPosts = perSection
 	</section>
 
 	{
-		latestPosts.length > 0 ? (
+		featuredPost && (
+			<section class="hero-post">
+				<a href={`${featuredPost.section.href}/${featuredPost.post.id}`} class="hero-post-link">
+					{featuredPost.post.data.featured_image && (
+						<div class="hero-post-image">
+							<Image image={featuredPost.post.data.featured_image} />
+						</div>
+					)}
+					<div class="hero-post-body">
+						<div class="post-meta">
+							<span class="type-badge">{featuredPost.section.label}</span>
+							{featuredPost.post.data.publishedAt && (
+								<time class="post-date">{formatDate(featuredPost.post.data.publishedAt)}</time>
+							)}
+						</div>
+						<h2 class="hero-post-title">{featuredPost.post.data.title}</h2>
+						{featuredPost.post.data.excerpt && (
+							<p class="hero-post-excerpt">{featuredPost.post.data.excerpt}</p>
+						)}
+					</div>
+				</a>
+			</section>
+		)
+	}
+
+	{
+		restPosts.length > 0 && (
 			<section class="featured">
 				<header class="section-header">
-					<h2 class="section-title">Últimas publicaciones</h2>
+					<h2 class="section-title">Más publicaciones</h2>
 				</header>
 				<div class="posts-list">
-					{latestPosts.map(({ post, section }) => (
+					{restPosts.map(({ post, section }) => (
 						<PostCard
 							title={post.data.title}
 							excerpt={post.data.excerpt}
+							featuredImage={post.data.featured_image ?? undefined}
 							href={`${section.href}/${post.id}`}
 							date={post.data.publishedAt ?? undefined}
 							typeLabel={section.label}
@@ -62,7 +95,11 @@ const latestPosts = perSection
 					))}
 				</div>
 			</section>
-		) : (
+		)
+	}
+
+	{
+		!featuredPost && (
 			<section class="empty-state">
 				<h2>Aún no hay publicaciones</h2>
 				<p>Agrega tu primera publicación en el panel de administración.</p>
@@ -119,6 +156,79 @@ const latestPosts = perSection
 		border-color: var(--color-text);
 	}
 
+	.hero-post {
+		max-width: var(--wide-width);
+		margin: 0 auto;
+		padding: 0 var(--spacing-lg) var(--spacing-3xl);
+	}
+
+	.hero-post-link {
+		display: grid;
+		grid-template-columns: 3fr 2fr;
+		gap: var(--spacing-2xl);
+		align-items: center;
+		text-decoration: none;
+		color: inherit;
+	}
+
+	.hero-post-image {
+		aspect-ratio: 16 / 10;
+		overflow: hidden;
+		border-radius: var(--radius);
+		background: var(--color-surface);
+	}
+
+	.hero-post-image :global(img) {
+		width: 100%;
+		height: 100%;
+		object-fit: cover;
+		transition: transform var(--transition-slow, 400ms ease);
+	}
+
+	.hero-post-link:hover .hero-post-image :global(img) {
+		transform: scale(1.02);
+	}
+
+	.hero-post-title {
+		font-family: var(--font-heading);
+		font-size: var(--font-size-4xl);
+		font-weight: var(--font-weight-display);
+		line-height: var(--leading-tight);
+		margin-top: var(--spacing-sm);
+		transition: color var(--transition-fast);
+	}
+
+	.hero-post-link:hover .hero-post-title {
+		color: var(--color-brand);
+	}
+
+	.hero-post-excerpt {
+		margin-top: var(--spacing-md);
+		font-size: var(--font-size-lg);
+		color: var(--color-muted);
+		line-height: var(--leading-normal);
+	}
+
+	.post-meta {
+		display: flex;
+		align-items: center;
+		flex-wrap: wrap;
+		gap: var(--spacing-md);
+	}
+
+	.type-badge {
+		font-size: var(--font-size-xs);
+		text-transform: uppercase;
+		letter-spacing: var(--tracking-wide);
+		color: var(--color-brand);
+		font-weight: 600;
+	}
+
+	.post-date {
+		font-size: var(--font-size-sm);
+		color: var(--color-muted);
+	}
+
 	.featured {
 		max-width: var(--max-width);
 		margin: 0 auto;
@@ -163,6 +273,14 @@ const latestPosts = perSection
 		}
 
 		.hero-title {
+			font-size: var(--font-size-3xl);
+		}
+
+		.hero-post-link {
+			grid-template-columns: 1fr;
+		}
+
+		.hero-post-title {
 			font-size: var(--font-size-3xl);
 		}
 	}

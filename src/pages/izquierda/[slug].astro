@@ -1,6 +1,6 @@
 ---
 import { getEmDashEntry, decodeSlug } from "emdash";
-import { PortableText } from "emdash/ui";
+import { Image, PortableText } from "emdash/ui";
 import Base from "../../layouts/Base.astro";
 
 const COLLECTION = "izquierda";
@@ -29,10 +29,27 @@ const publishDate =
 	}) ?? null;
 
 const tags = post.data.terms?.post_tag ?? [];
+
+function getImageSrc(img: unknown): string | undefined {
+	if (!img || typeof img !== "object") return undefined;
+	const image = img as Record<string, unknown>;
+	return typeof image.src === "string" ? image.src : undefined;
+}
 ---
 
-<Base title={post.data.title} description={post.data.excerpt}>
+<Base
+	title={post.data.title}
+	description={post.data.excerpt}
+	image={getImageSrc(post.data.featured_image)}
+>
 	<article class="post">
+		{
+			post.data.featured_image && (
+				<div class="post-hero" {...post.edit.featured_image}>
+					<Image image={post.data.featured_image} />
+				</div>
+			)
+		}
 		<header class="post-header">
 			<div class="post-meta">
 				<span class="type-badge">{BACK_LABEL}</span>
@@ -73,6 +90,20 @@ const tags = post.data.terms?.post_tag ?? [];
 		max-width: var(--max-width);
 		margin: 0 auto;
 		padding: var(--spacing-3xl) var(--spacing-lg) var(--spacing-4xl);
+	}
+
+	.post-hero {
+		margin-bottom: var(--spacing-2xl);
+		aspect-ratio: 16 / 7;
+		overflow: hidden;
+		border-radius: var(--radius);
+		background: var(--color-surface);
+	}
+
+	.post-hero :global(img) {
+		width: 100%;
+		height: 100%;
+		object-fit: cover;
 	}
 
 	.post-header {
